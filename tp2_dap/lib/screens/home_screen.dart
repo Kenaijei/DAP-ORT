@@ -19,12 +19,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final _priceController = TextEditingController();
   final _quantityController = TextEditingController();
 
-  Product? _mostExpensiveProduct;
-  Product? _cheapestProduct;
-  Product? _highestQuantityProduct;
-  Product? _lowestQuantityProduct;
-  double _totalPrice = 0;
-  int _totalProducts = 0;
+  final List<Product> _products = [];
 
   void _addProduct() {
     if (_formKey.currentState!.validate()) {
@@ -36,27 +31,7 @@ class _HomeScreenState extends State<HomeScreen> {
           quantity: int.parse(_quantityController.text),
         );
 
-        if (_mostExpensiveProduct == null ||
-            newProduct.price > _mostExpensiveProduct!.price) {
-          _mostExpensiveProduct = newProduct;
-        }
-
-        if (_cheapestProduct == null || newProduct.price < _cheapestProduct!.price) {
-          _cheapestProduct = newProduct;
-        }
-
-        if (_highestQuantityProduct == null ||
-            newProduct.quantity > _highestQuantityProduct!.quantity) {
-          _highestQuantityProduct = newProduct;
-        }
-
-        if (_lowestQuantityProduct == null ||
-            newProduct.quantity < _lowestQuantityProduct!.quantity) {
-          _lowestQuantityProduct = newProduct;
-        }
-
-        _totalPrice += newProduct.price;
-        _totalProducts++;
+        _products.add(newProduct);
 
         _nameController.clear();
         _descriptionController.clear();
@@ -74,7 +49,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _calculateResults() {
-    if (_totalProducts == 0) {
+    if (_products.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Debe ingresar al menos un producto'),
@@ -84,16 +59,27 @@ class _HomeScreenState extends State<HomeScreen> {
       return;
     }
 
+    final mostExpensiveProduct =
+        _products.reduce((a, b) => a.price > b.price ? a : b);
+    final cheapestProduct =
+        _products.reduce((a, b) => a.price < b.price ? a : b);
+    final highestQuantityProduct =
+        _products.reduce((a, b) => a.quantity > b.quantity ? a : b);
+    final lowestQuantityProduct =
+        _products.reduce((a, b) => a.quantity < b.quantity ? a : b);
+    final totalPrice = _products.fold(0.0, (sum, item) => sum + item.price);
+    final averagePrice = totalPrice / _products.length;
+
     final results = {
-      'mostExpensiveName': _mostExpensiveProduct?.name,
-      'mostExpensiveDescription': _mostExpensiveProduct?.description,
-      'cheapestName': _cheapestProduct?.name,
-      'cheapestDescription': _cheapestProduct?.description,
-      'highestQuantityName': _highestQuantityProduct?.name,
-      'highestQuantityDescription': _highestQuantityProduct?.description,
-      'lowestQuantityName': _lowestQuantityProduct?.name,
-      'lowestQuantityDescription': _lowestQuantityProduct?.description,
-      'averagePrice': _totalPrice / _totalProducts,
+      'mostExpensiveName': mostExpensiveProduct.name,
+      'mostExpensiveDescription': mostExpensiveProduct.description,
+      'cheapestName': cheapestProduct.name,
+      'cheapestDescription': cheapestProduct.description,
+      'highestQuantityName': highestQuantityProduct.name,
+      'highestQuantityDescription': highestQuantityProduct.description,
+      'lowestQuantityName': lowestQuantityProduct.name,
+      'lowestQuantityDescription': lowestQuantityProduct.description,
+      'averagePrice': averagePrice,
     };
 
     context.go('/results', extra: results);

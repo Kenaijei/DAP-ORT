@@ -8,7 +8,8 @@ class ResultsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Widget buildResultCard(String title, String name, String description) {
+    // Función auxiliar para crear tarjetas de resultados
+    Widget _buildResultCard(String title, String name, String description) {
       return Card(
         elevation: 4,
         margin: const EdgeInsets.symmetric(vertical: 10),
@@ -67,22 +68,22 @@ class ResultsScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            buildResultCard(
+            _buildResultCard(
               'Producto más caro',
               results['mostExpensiveName'] ?? 'N/A',
               results['mostExpensiveDescription'] ?? 'N/A',
             ),
-            buildResultCard(
+            _buildResultCard(
               'Producto más barato',
               results['cheapestName'] ?? 'N/A',
               results['cheapestDescription'] ?? 'N/A',
             ),
-            buildResultCard(
+            _buildResultCard(
               'Producto con mayor cantidad',
               results['highestQuantityName'] ?? 'N/A',
               results['highestQuantityDescription'] ?? 'N/A',
             ),
-            buildResultCard(
+            _buildResultCard(
               'Producto con menor cantidad',
               results['lowestQuantityName'] ?? 'N/A',
               results['lowestQuantityDescription'] ?? 'N/A',
