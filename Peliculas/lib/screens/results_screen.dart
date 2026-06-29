@@ -13,9 +13,9 @@ class MovieDetailsScreen extends StatelessWidget {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.14),
+          color: Colors.white.withValues(alpha: 0.14),
           borderRadius: BorderRadius.circular(999),
-          border: Border.all(color: Colors.white.withOpacity(0.16)),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.16)),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -58,7 +58,7 @@ class MovieDetailsScreen extends StatelessWidget {
                   gradient: LinearGradient(
                     colors: [
                       movie.accentColor,
-                      movie.accentColor.withOpacity(0.7),
+                      movie.accentColor.withValues(alpha: 0.7),
                     ],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
@@ -85,7 +85,7 @@ class MovieDetailsScreen extends StatelessWidget {
                           fit: BoxFit.cover,
                           errorBuilder: (context, error, stackTrace) {
                             return Container(
-                              color: Colors.white.withOpacity(0.16),
+                              color: Colors.white.withValues(alpha: 0.16),
                               child: const Icon(
                                 Icons.local_movies_rounded,
                                 size: 46,

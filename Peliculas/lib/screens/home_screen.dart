@@ -22,12 +22,12 @@ class _HomeScreenState extends State<HomeScreen> {
       description:
           'Retrata el ascenso científico de J. Robert Oppenheimer y el costo moral de liderar el proyecto que cambió la guerra moderna.',
       posterUrl:
-          'https://www.imdb.com/es/title/tt15398776/',
+          'https://upload.wikimedia.org/wikipedia/en/4/4a/Oppenheimer_%28film%29.jpg',
       director: 'Christopher Nolan',
       accentColor: Color(0xFF374151),
     ),
     Movie(
-      title: 'Interestellar',
+      title: 'Interstellar',
       genre: 'Ciencia ficción',
       year: 2014,
       duration: '2h 49m',
@@ -61,7 +61,7 @@ class _HomeScreenState extends State<HomeScreen> {
       description:
           'Sam Witwicky descubre una conspiración ligada a la carrera espacial y a un antiguo secreto de Cybertron.',
       posterUrl:
-          'https://upload.wikimedia.org/wikipedia/en/c/c9/Transformers_dark_of_the_moon_theatrical_poster.jpg',
+          'https://upload.wikimedia.org/wikipedia/en/b/bf/Transformers_dark_of_the_moon_ver5.jpg',
       director: 'Michael Bay',
       accentColor: Color(0xFF4A5568),
     ),
@@ -87,7 +87,7 @@ class _HomeScreenState extends State<HomeScreen> {
       description:
           'La familia de Jake y Neytiri busca refugio entre los clanes del agua mientras una amenaza regresa a Pandora.',
       posterUrl:
-          'https://upload.wikimedia.org/wikipedia/en/d/d6/Avatar_The_Way_of_Water_poster.jpg',
+          'https://upload.wikimedia.org/wikipedia/en/5/54/Avatar_The_Way_of_Water_poster.jpg',
       director: 'James Cameron',
       accentColor: Color(0xFF0F6E8C),
     ),
@@ -100,12 +100,12 @@ class _HomeScreenState extends State<HomeScreen> {
       description:
           'La siguiente etapa de la saga de Pandora promete llevar el conflicto a nuevas regiones y expandir el mundo de los na\u2019vi.',
       posterUrl:
-          'https://placehold.co/600x900/0f172a/f8fafc?text=Avatar%3A+Fire+and+Ash',
+          'https://m.media-amazon.com/images/M/MV5BZDYxY2I1OGMtN2Y4MS00ZmU1LTgyNDAtODA0MzAyYjI0N2Y2XkEyXkFqcGc@._V1_.jpg',
       director: 'James Cameron',
       accentColor: Color(0xFF7F1D1D),
     ),
     Movie(
-      title: 'Proyect Hail Marry',
+      title: 'Project Hail Mary',
       genre: 'Ciencia ficción',
       year: 2026,
       duration: '2h 36m',
@@ -113,7 +113,7 @@ class _HomeScreenState extends State<HomeScreen> {
       description:
           'Un profesor despierta a bordo de una nave espacial sin recordar su misión y debe descubrir cómo salvar a la Tierra.',
       posterUrl:
-          'https://placehold.co/600x900/111827/f9fafb?text=Proyect+Hail+Marry',
+          'https://m.media-amazon.com/images/M/MV5BNTkwNzJiYTctNzI3NC00NjE1LTlhYjktY2Q5MTdmMWFmNzcxXkEyXkFqcGc@._V1_.jpg',
       director: 'Phil Lord y Christopher Miller',
       accentColor: Color(0xFF334155),
     ),
@@ -126,14 +126,14 @@ class _HomeScreenState extends State<HomeScreen> {
       description:
           'Un hombre aparentemente común revela un pasado violento cuando un robo doméstico desata una cadena de consecuencias.',
       posterUrl:
-          'https://upload.wikimedia.org/wikipedia/en/3/3b/Nobody_2021_film_poster.jpg',
+          'https://upload.wikimedia.org/wikipedia/en/c/c7/Nobody_2021_Film_Poster.jpeg',
       director: 'Ilya Naishuller',
       accentColor: Color(0xFFB45309),
     ),
   ];
 
   void _openMovie(Movie movie) {
-    context.go('/movie-detail', extra: movie);
+    context.push('/movie-detail', extra: movie);
   }
 
   @override
@@ -172,7 +172,7 @@ class _HomeScreenState extends State<HomeScreen> {
               Expanded(
                 child: ListView.separated(
                   itemCount: _movies.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 14),
+                  separatorBuilder: (_, _) => const SizedBox(height: 14),
                   itemBuilder: (context, index) {
                     final movie = _movies[index];
 

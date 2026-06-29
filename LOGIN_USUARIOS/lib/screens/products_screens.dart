@@ -3,6 +3,8 @@ import 'package:go_router/go_router.dart';
 import '../core/services/product_service.dart';
 
 class ProductsScreen extends StatefulWidget {
+  const ProductsScreen({super.key});
+
   @override
   _ProductsScreenState createState() => _ProductsScreenState();
 }
