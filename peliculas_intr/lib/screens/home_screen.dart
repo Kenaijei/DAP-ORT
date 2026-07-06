@@ -210,7 +210,7 @@ class _HomeScreenState extends State<HomeScreen> {
               Expanded(
                 child: ListView.separated(
                   itemCount: _movies.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 14),
+                  separatorBuilder: (_, _) => const SizedBox(height: 14),
                   itemBuilder: (context, index) {
                     final movie = _movies[index];
 
