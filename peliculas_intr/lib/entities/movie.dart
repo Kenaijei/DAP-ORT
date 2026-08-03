@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 class Movie {
+  final String id;
   final String title;
   final String genre;
   final int year;
@@ -12,6 +13,7 @@ class Movie {
   final Color accentColor;
 
   const Movie({
+    required this.id,
     required this.title,
     required this.genre,
     required this.year,

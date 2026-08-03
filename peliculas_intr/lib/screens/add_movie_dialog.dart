@@ -1,22 +1,24 @@
 import 'package:flutter/material.dart';
-import 'package:peliculas_intr/entities/movie.dart';
+import 'package:tp4_dap/entities/movie.dart';
 
 class AddMovieDialog extends StatefulWidget {
-  const AddMovieDialog({super.key});
+  final Movie? movie;
+
+  const AddMovieDialog({super.key, this.movie});
 
   @override
   State<AddMovieDialog> createState() => _AddMovieDialogState();
 }
 
 class _AddMovieDialogState extends State<AddMovieDialog> {
-  final _titleController = TextEditingController();
-  final _genreController = TextEditingController();
-  final _yearController = TextEditingController();
-  final _durationController = TextEditingController();
-  final _ratingController = TextEditingController();
-  final _descriptionController = TextEditingController();
-  final _posterUrlController = TextEditingController();
-  final _directorController = TextEditingController();
+  late final TextEditingController _titleController;
+  late final TextEditingController _genreController;
+  late final TextEditingController _yearController;
+  late final TextEditingController _durationController;
+  late final TextEditingController _ratingController;
+  late final TextEditingController _descriptionController;
+  late final TextEditingController _posterUrlController;
+  late final TextEditingController _directorController;
 
   final List<Color> _accentColors = [
     const Color(0xFF374151),
@@ -30,7 +32,27 @@ class _AddMovieDialogState extends State<AddMovieDialog> {
     const Color(0xFFB45309),
   ];
 
-  int _selectedColorIndex = 0;
+  late int _selectedColorIndex;
+
+  @override
+  void initState() {
+    super.initState();
+    final movie = widget.movie;
+    _titleController = TextEditingController(text: movie?.title ?? '');
+    _genreController = TextEditingController(text: movie?.genre ?? '');
+    _yearController = TextEditingController(text: movie?.year.toString() ?? '');
+    _durationController = TextEditingController(text: movie?.duration ?? '');
+    _ratingController = TextEditingController(text: movie?.rating.toString() ?? '');
+    _descriptionController = TextEditingController(text: movie?.description ?? '');
+    _posterUrlController = TextEditingController(text: movie?.posterUrl ?? '');
+    _directorController = TextEditingController(text: movie?.director ?? '');
+    _selectedColorIndex = movie != null
+        ? _accentColors.indexOf(movie.accentColor)
+        : 0;
+    if (_selectedColorIndex < 0 || _selectedColorIndex >= _accentColors.length) {
+      _selectedColorIndex = 0;
+    }
+  }
 
   void _addMovie() {
     if (_titleController.text.isEmpty ||
@@ -53,12 +75,13 @@ class _AddMovieDialogState extends State<AddMovieDialog> {
 
       if (rating < 0 || rating > 10) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('La calificación debe estar entre 0 y 10')),
+          const SnackBar(content: Text('La calificacion debe estar entre 0 y 10')),
         );
         return;
       }
 
       final movie = Movie(
+        id: widget.movie?.id ?? DateTime.now().millisecondsSinceEpoch.toString(),
         title: _titleController.text,
         genre: _genreController.text,
         year: year,
@@ -73,7 +96,7 @@ class _AddMovieDialogState extends State<AddMovieDialog> {
       Navigator.of(context).pop(movie);
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Error: Verifica que año y calificación sean números')),
+        const SnackBar(content: Text('Error: verifica que ano y calificacion sean numeros')),
       );
     }
   }
@@ -93,6 +116,8 @@ class _AddMovieDialogState extends State<AddMovieDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final isEditing = widget.movie != null;
+
     return Dialog(
       insetPadding: const EdgeInsets.all(16),
       child: SingleChildScrollView(
@@ -102,9 +127,9 @@ class _AddMovieDialogState extends State<AddMovieDialog> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Agregar Nueva Película',
-                style: TextStyle(
+              Text(
+                isEditing ? 'Editar pelicula' : 'Agregar nueva pelicula',
+                style: const TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
                 ),
@@ -113,7 +138,7 @@ class _AddMovieDialogState extends State<AddMovieDialog> {
               TextField(
                 controller: _titleController,
                 decoration: const InputDecoration(
-                  labelText: 'Título',
+                  labelText: 'Titulo',
                   border: OutlineInputBorder(),
                 ),
               ),
@@ -121,7 +146,7 @@ class _AddMovieDialogState extends State<AddMovieDialog> {
               TextField(
                 controller: _genreController,
                 decoration: const InputDecoration(
-                  labelText: 'Género',
+                  labelText: 'Genero',
                   border: OutlineInputBorder(),
                 ),
               ),
@@ -133,7 +158,7 @@ class _AddMovieDialogState extends State<AddMovieDialog> {
                       controller: _yearController,
                       keyboardType: TextInputType.number,
                       decoration: const InputDecoration(
-                        labelText: 'Año',
+                        labelText: 'Ano',
                         border: OutlineInputBorder(),
                       ),
                     ),
@@ -155,7 +180,7 @@ class _AddMovieDialogState extends State<AddMovieDialog> {
               TextField(
                 controller: _durationController,
                 decoration: const InputDecoration(
-                  labelText: 'Duración (ej: 2h 30m)',
+                  labelText: 'Duracion (ej: 2h 30m)',
                   border: OutlineInputBorder(),
                 ),
               ),
@@ -171,7 +196,7 @@ class _AddMovieDialogState extends State<AddMovieDialog> {
               TextField(
                 controller: _posterUrlController,
                 decoration: const InputDecoration(
-                  labelText: 'URL del Póster',
+                  labelText: 'URL del Poster',
                   border: OutlineInputBorder(),
                 ),
               ),
@@ -180,7 +205,7 @@ class _AddMovieDialogState extends State<AddMovieDialog> {
                 controller: _descriptionController,
                 maxLines: 3,
                 decoration: const InputDecoration(
-                  labelText: 'Descripción',
+                  labelText: 'Descripcion',
                   border: OutlineInputBorder(),
                 ),
               ),
@@ -231,7 +256,7 @@ class _AddMovieDialogState extends State<AddMovieDialog> {
                       backgroundColor: const Color(0xFF0F172A),
                       foregroundColor: Colors.white,
                     ),
-                    child: const Text('Agregar'),
+                    child: Text(widget.movie != null ? 'Actualizar' : 'Agregar'),
                   ),
                 ],
               ),

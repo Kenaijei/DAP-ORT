@@ -1,21 +1,31 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:peliculas_intr/entities/movie.dart';
+import 'package:tp4_dap/core/providers/movies_provider.dart';
+import 'package:tp4_dap/entities/movie.dart';
+import 'package:tp4_dap/screens/add_movie_dialog.dart';
 
-class MovieDetailsScreen extends StatelessWidget {
+class MovieDetailsScreen extends ConsumerWidget {
   final Movie movie;
 
   const MovieDetailsScreen({super.key, required this.movie});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final movies = ref.watch(moviesProvider);
+    final currentMovie = movies.firstWhere(
+      (m) => m.id == movie.id,
+      orElse: () => movie,
+    );
+    final isEditing = currentMovie.id == movie.id;
+
     Widget buildInfoChip(IconData icon, String text) {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.14),
+          color: Colors.white.withOpacity(0.14),
           borderRadius: BorderRadius.circular(999),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.16)),
+          border: Border.all(color: Colors.white.withOpacity(0.16)),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -37,7 +47,7 @@ class MovieDetailsScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: const Color(0xFFF4F1EA),
       appBar: AppBar(
-        title: const Text('Detalle de película'),
+        title: const Text('Detalle de pelicula'),
         backgroundColor: const Color(0xFFF4F1EA),
         elevation: 0,
         foregroundColor: Colors.black87,
@@ -57,8 +67,8 @@ class MovieDetailsScreen extends StatelessWidget {
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
-                      movie.accentColor,
-                      movie.accentColor.withValues(alpha: 0.7),
+                      currentMovie.accentColor,
+                      currentMovie.accentColor.withOpacity(0.7),
                     ],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
@@ -81,11 +91,11 @@ class MovieDetailsScreen extends StatelessWidget {
                         width: 92,
                         height: 132,
                         child: Image.network(
-                          movie.posterUrl,
+                          currentMovie.posterUrl,
                           fit: BoxFit.cover,
                           errorBuilder: (context, error, stackTrace) {
                             return Container(
-                              color: Colors.white.withValues(alpha: 0.16),
+                              color: Colors.white.withOpacity(0.16),
                               child: const Icon(
                                 Icons.local_movies_rounded,
                                 size: 46,
@@ -98,7 +108,7 @@ class MovieDetailsScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 18),
                     Text(
-                      movie.title,
+                      currentMovie.title,
                       style: const TextStyle(
                         fontSize: 30,
                         fontWeight: FontWeight.w800,
@@ -108,7 +118,7 @@ class MovieDetailsScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 10),
                     Text(
-                      movie.description,
+                      currentMovie.description,
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 15,
@@ -120,15 +130,15 @@ class MovieDetailsScreen extends StatelessWidget {
                       spacing: 10,
                       runSpacing: 10,
                       children: [
-                        buildInfoChip(Icons.category_rounded, movie.genre),
+                        buildInfoChip(Icons.category_rounded, currentMovie.genre),
                         buildInfoChip(
                           Icons.calendar_month_rounded,
-                          '${movie.year}',
+                          '${currentMovie.year}',
                         ),
-                        buildInfoChip(Icons.schedule_rounded, movie.duration),
+                        buildInfoChip(Icons.schedule_rounded, currentMovie.duration),
                         buildInfoChip(
                           Icons.star_rounded,
-                          movie.rating.toStringAsFixed(1),
+                          currentMovie.rating.toStringAsFixed(1),
                         ),
                       ],
                     ),
@@ -147,45 +157,81 @@ class MovieDetailsScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
-                      'Información',
+                      'Informacion',
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.w800,
                       ),
                     ),
                     const SizedBox(height: 16),
-                    _DetailRow(label: 'Director', value: movie.director),
+                    _DetailRow(label: 'Director', value: currentMovie.director),
                     const SizedBox(height: 12),
-                    _DetailRow(label: 'Género', value: movie.genre),
+                    _DetailRow(label: 'Genero', value: currentMovie.genre),
                     const SizedBox(height: 12),
-                    _DetailRow(label: 'Descripción', value: movie.description),
+                    _DetailRow(label: 'Descripcion', value: currentMovie.description),
                     const SizedBox(height: 12),
-                    _DetailRow(label: 'Portada', value: movie.posterUrl),
+                    _DetailRow(label: 'Portada', value: currentMovie.posterUrl),
                     const SizedBox(height: 12),
-                    _DetailRow(label: 'Duración', value: movie.duration),
+                    _DetailRow(label: 'Duracion', value: currentMovie.duration),
                     const SizedBox(height: 12),
-                    _DetailRow(label: 'Año', value: '${movie.year}'),
+                    _DetailRow(label: 'Ano', value: '${currentMovie.year}'),
                     const SizedBox(height: 12),
                     _DetailRow(
-                      label: 'Puntuación',
-                      value: movie.rating.toStringAsFixed(1),
+                      label: 'Puntuacion',
+                      value: currentMovie.rating.toStringAsFixed(1),
                     ),
                   ],
                 ),
               ),
               const SizedBox(height: 18),
-              ElevatedButton.icon(
-                onPressed: () => context.pop(),
-                icon: const Icon(Icons.arrow_back_rounded),
-                label: const Text('Volver a la lista'),
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 15),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () async {
+                        final updatedMovie = await showDialog<Movie>(
+                          context: context,
+                          builder: (context) => AddMovieDialog(movie: currentMovie),
+                        );
+
+                        if (updatedMovie != null) {
+                          ref.read(moviesProvider.notifier).updateMovie(updatedMovie);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Película actualizada correctamente'),
+                            ),
+                          );
+                        }
+                      },
+                      icon: const Icon(Icons.edit_rounded),
+                      label: const Text('Editar pelicula'),
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 15),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        backgroundColor: Colors.black87,
+                        foregroundColor: Colors.white,
+                      ),
+                    ),
                   ),
-                  backgroundColor: Colors.black87,
-                  foregroundColor: Colors.white,
-                ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () => context.pop(),
+                      icon: const Icon(Icons.arrow_back_rounded),
+                      label: const Text('Volver a la lista'),
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 15),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        backgroundColor: Colors.grey[800],
+                        foregroundColor: Colors.white,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),

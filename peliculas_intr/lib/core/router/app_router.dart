@@ -1,13 +1,15 @@
 import 'package:go_router/go_router.dart';
-import 'package:peliculas_intr/entities/movie.dart';
-import 'package:peliculas_intr/screens/home_screen.dart';
-import 'package:peliculas_intr/screens/login_screen.dart';
-import 'package:peliculas_intr/screens/movie_details_screen.dart';
+import 'package:tp4_dap/entities/movie.dart';
+import 'package:tp4_dap/screens/home_screen.dart';
+import 'package:tp4_dap/screens/login_screen.dart';
+import 'package:tp4_dap/screens/movie_details_screen.dart';
+import 'package:tp4_dap/screens/sign_up_screen.dart';
 
 final appRouter = GoRouter(
-  initialLocation: '/',
+  initialLocation: '/login',
   routes: [
-    GoRoute(path: '/', builder: (context, state) => const LoginScreen()),
+    GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
+    GoRoute(path: '/signup', builder: (context, state) => const SignUpScreen()),
     GoRoute(
       path: '/home',
       builder: (context, state) {

@@ -1,35 +1,53 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:tp4_dap/core/providers/auth_provider.dart';
 
-class LoginScreen extends StatefulWidget {
+class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  ConsumerState<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
 
-  void _login() {
-    const hardcodedUsername = 'admin';
-    const hardcodedPassword = 'admin';
-
-    final username = _usernameController.text;
+  Future<void> _login() async {
+    final username = _usernameController.text.trim();
     final password = _passwordController.text;
 
-    if (username == hardcodedUsername && password == hardcodedPassword) {
-      context.go('/home', extra: username);
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Usuario o contraseña incorrectos'),
-          backgroundColor: Colors.red,
-        ),
-      );
+    if (username.isEmpty || password.isEmpty) {
+      _showError('Por favor completa todos los campos');
+      return;
     }
+
+    final registeredUsers = await ref.read(authProvider.notifier).getRegisteredUsers();
+    final success = await ref.read(authProvider.notifier).login(username, password);
+
+    if (registeredUsers.isEmpty) {
+      _showError('No hay usuarios registrados. Por favor registrate.');
+      return;
+    }
+
+    if (success) {
+      context.go('/home', extra: username);
+    } else if (!registeredUsers.contains(username)) {
+      _showError('Usuario no encontrado. Registrate primero.');
+    } else {
+      _showError('Contrasena incorrecta.');
+    }
+  }
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+      ),
+    );
   }
 
   @override
@@ -63,7 +81,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 20),
                 const Text(
-                  'Películas',
+                  'Peliculas',
                   style: TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
@@ -72,7 +90,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 10),
                 Text(
-                  'Inicia sesión para continuar',
+                  'Inicia sesion para continuar',
                   style: TextStyle(
                     fontSize: 16,
                     color: Colors.grey[600],
@@ -94,7 +112,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   controller: _passwordController,
                   obscureText: _obscurePassword,
                   decoration: InputDecoration(
-                    labelText: 'Contraseña',
+                    labelText: 'Contrasena',
                     prefixIcon: const Icon(Icons.lock),
                     suffixIcon: IconButton(
                       icon: Icon(
@@ -136,13 +154,21 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                Text(
-                  'Credenciales: admin / admin',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey[600],
-                  ),
-                  textAlign: TextAlign.center,
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text('No tienes cuenta? '),
+                    GestureDetector(
+                      onTap: () => context.go('/signup'),
+                      child: Text(
+                        'Registrate',
+                        style: TextStyle(
+                          color: Theme.of(context).primaryColor,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -159,3 +185,4 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 }
+
