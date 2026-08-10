@@ -169,6 +169,40 @@ class HomeScreen extends ConsumerWidget {
                                         ),
                                       ),
                                       const Spacer(),
+                                      IconButton(
+                                        onPressed: () async {
+                                          final confirmed = await showDialog<bool>(
+                                            context: context,
+                                            builder: (context) => AlertDialog(
+                                              title: const Text('Eliminar pelicula'),
+                                              content: Text('Eliminar ${movie.title}?'),
+                                              actions: [
+                                                TextButton(
+                                                  onPressed: () => Navigator.of(context).pop(false),
+                                                  child: const Text('Cancelar'),
+                                                ),
+                                                TextButton(
+                                                  onPressed: () => Navigator.of(context).pop(true),
+                                                  child: const Text('Eliminar'),
+                                                ),
+                                              ],
+                                            ),
+                                          );
+                                          if (confirmed == true) {
+                                            ref.read(moviesProvider.notifier).deleteMovie(movie.id);
+                                            ScaffoldMessenger.of(context).showSnackBar(
+                                              const SnackBar(content: Text('Pelicula eliminada')),
+                                            );
+                                          }
+                                        },
+                                        icon: const Icon(
+                                          Icons.delete_outline,
+                                          color: Colors.redAccent,
+                                          size: 22,
+                                        ),
+                                        tooltip: 'Eliminar pelicula',
+                                      ),
+                                      const SizedBox(width: 4),
                                       const Icon(
                                         Icons.chevron_right_rounded,
                                         color: Colors.black54,

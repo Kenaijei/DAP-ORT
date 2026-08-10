@@ -161,5 +161,9 @@ class MoviesNotifier extends StateNotifier<List<Movie>> {
         .map((movie) => movie.id == updatedMovie.id ? updatedMovie : movie)
         .toList();
   }
+
+  void deleteMovie(String id) {
+    state = state.where((movie) => movie.id != id).toList();
+  }
 }
 
