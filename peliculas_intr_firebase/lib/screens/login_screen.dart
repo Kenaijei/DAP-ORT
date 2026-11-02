@@ -11,33 +11,26 @@ class LoginScreen extends ConsumerStatefulWidget {
 }
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
-  final _usernameController = TextEditingController();
+  final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
 
   Future<void> _login() async {
-    final username = _usernameController.text.trim();
+    final email = _emailController.text.trim();
     final password = _passwordController.text;
 
-    if (username.isEmpty || password.isEmpty) {
+    if (email.isEmpty || password.isEmpty) {
       _showError('Por favor completa todos los campos');
       return;
     }
 
-    final registeredUsers = await ref.read(authProvider.notifier).getRegisteredUsers();
-    final success = await ref.read(authProvider.notifier).login(username, password);
-
-    if (registeredUsers.isEmpty) {
-      _showError('No hay usuarios registrados. Por favor registrate.');
-      return;
-    }
+    final success = await ref.read(authProvider.notifier).login(email, password);
+    final authState = ref.read(authProvider);
 
     if (success) {
-      context.go('/home', extra: username);
-    } else if (!registeredUsers.contains(username)) {
-      _showError('Usuario no encontrado. Registrate primero.');
+      if (mounted) context.go('/home', extra: authState.username);
     } else {
-      _showError('Contrasena incorrecta.');
+      _showError(authState.errorMessage ?? 'No se pudo iniciar sesion');
     }
   }
 
@@ -98,10 +91,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 ),
                 const SizedBox(height: 30),
                 TextField(
-                  controller: _usernameController,
+                  controller: _emailController,
+                  enabled: !ref.watch(authProvider).isLoading,
+                  keyboardType: TextInputType.emailAddress,
+                  autocorrect: false,
                   decoration: InputDecoration(
-                    labelText: 'Usuario',
-                    prefixIcon: const Icon(Icons.person),
+                    labelText: 'Correo electronico',
+                    prefixIcon: const Icon(Icons.email_outlined),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -110,6 +106,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 const SizedBox(height: 16),
                 TextField(
                   controller: _passwordController,
+                  enabled: !ref.watch(authProvider).isLoading,
                   obscureText: _obscurePassword,
                   decoration: InputDecoration(
                     labelText: 'Contrasena',
@@ -136,7 +133,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   width: double.infinity,
                   height: 50,
                   child: ElevatedButton(
-                    onPressed: _login,
+                    onPressed: ref.watch(authProvider).isLoading ? null : _login,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF0F172A),
                       foregroundColor: Colors.white,
@@ -144,13 +141,22 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                    child: const Text(
-                      'Ingresar',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+                    child: ref.watch(authProvider).isLoading
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Text(
+                            'Ingresar',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -180,7 +186,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   @override
   void dispose() {
-    _usernameController.dispose();
+    _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
   }

@@ -44,6 +44,14 @@ class HomeScreen extends ConsumerWidget {
         foregroundColor: Colors.black87,
         automaticallyImplyLeading: false,
         actions: [
+          Tooltip(
+            message: 'Perfil',
+            child: IconButton(
+              onPressed: () => context.push('/profile'),
+              icon: const Icon(Icons.account_circle_outlined),
+              iconSize: 27,
+            ),
+          ),
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: Tooltip(

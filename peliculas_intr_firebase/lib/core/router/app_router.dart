@@ -3,6 +3,7 @@ import 'package:tp4_dap/entities/movie.dart';
 import 'package:tp4_dap/screens/home_screen.dart';
 import 'package:tp4_dap/screens/login_screen.dart';
 import 'package:tp4_dap/screens/movie_details_screen.dart';
+import 'package:tp4_dap/screens/profile_screen.dart';
 import 'package:tp4_dap/screens/sign_up_screen.dart';
 
 final appRouter = GoRouter(
@@ -10,6 +11,7 @@ final appRouter = GoRouter(
   routes: [
     GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
     GoRoute(path: '/signup', builder: (context, state) => const SignUpScreen()),
+    GoRoute(path: '/profile', builder: (context, state) => const ProfileScreen()),
     GoRoute(
       path: '/home',
       builder: (context, state) {

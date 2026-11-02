@@ -11,19 +11,23 @@ class SignUpScreen extends ConsumerStatefulWidget {
 }
 
 class _SignUpScreenState extends ConsumerState<SignUpScreen> {
-  final _usernameController = TextEditingController();
+  final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
 
   Future<void> _signup() async {
-    final username = _usernameController.text.trim();
+    final email = _emailController.text.trim();
     final password = _passwordController.text;
     final confirmPassword = _confirmPasswordController.text;
 
-    if (username.isEmpty) {
-      _showError('Por favor ingresa un usuario');
+    if (email.isEmpty) {
+      _showError('Por favor ingresa tu correo electronico');
+      return;
+    }
+    if (!RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(email)) {
+      _showError('Ingresa un correo electronico valido');
       return;
     }
 
@@ -37,7 +41,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
       return;
     }
 
-    final success = await ref.read(authProvider.notifier).register(username, password);
+    final success = await ref.read(authProvider.notifier).register(email, password);
     final authState = ref.read(authProvider);
 
     if (success) {
@@ -65,7 +69,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
 
   @override
   void dispose() {
-    _usernameController.dispose();
+    _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
@@ -106,11 +110,13 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                 ),
                 const SizedBox(height: 20),
                 TextField(
-                  controller: _usernameController,
+                  controller: _emailController,
                   enabled: !authState.isLoading,
+                  keyboardType: TextInputType.emailAddress,
+                  autocorrect: false,
                   decoration: InputDecoration(
-                    labelText: 'Usuario',
-                    prefixIcon: const Icon(Icons.person),
+                    labelText: 'Correo electronico',
+                    prefixIcon: const Icon(Icons.email_outlined),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),

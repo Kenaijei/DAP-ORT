@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "772615201998",
+    "firebase_url": "https://peliculasintr-default-rtdb.firebaseio.com",
+    "project_id": "peliculasintr",
+    "storage_bucket": "peliculasintr.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:772615201998:android:d14d9d706be24232b45c9f",
+        "android_client_info": {
+          "package_name": "com.example.peliculas_intr"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBJY2faYVkldvblQ72dM_3gaDugkcTkMbY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

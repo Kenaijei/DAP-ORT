@@ -15,21 +15,26 @@ class MoviesNotifier extends StateNotifier<List<Movie>> {
 
   Future<void> _loadMovies() async {
     try {
-      final snapshot = await FirebaseFirestore.instance.collection('peliculas').get();
-
-      if (snapshot.docs.isNotEmpty) {
-        state = snapshot.docs
-            .map((doc) => Movie.fromFirestore(doc.id, doc.data()))
-            .toList();
-        return;
-      }
-
+      final collection = FirebaseFirestore.instance.collection('peliculas');
+      final snapshot = await collection.get();
       final seedMovies = _seedMovies();
-      state = seedMovies;
+      final existingIds = snapshot.docs.map((doc) => doc.id).toSet();
+      final missingMovies = seedMovies
+          .where((movie) => !existingIds.contains(movie.id))
+          .toList();
 
-      for (final movie in seedMovies) {
-        await FirebaseFirestore.instance.collection('peliculas').doc(movie.id).set(movie.toFirestore());
+      if (missingMovies.isNotEmpty) {
+        final batch = FirebaseFirestore.instance.batch();
+        for (final movie in missingMovies) {
+          batch.set(collection.doc(movie.id), movie.toFirestore());
+        }
+        await batch.commit();
       }
+
+      state = [
+        ...snapshot.docs.map((doc) => Movie.fromFirestore(doc.id, doc.data())),
+        ...missingMovies,
+      ];
     } catch (e) {
       debugPrint('Error cargando peliculas: $e');
       state = _seedMovies();
