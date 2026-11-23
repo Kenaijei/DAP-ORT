@@ -2,7 +2,7 @@ import 'dart:typed_data';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' hide User;
 
 class AuthService {
   AuthService({FirebaseAuth? auth, FirebaseFirestore? firestore})
@@ -16,18 +16,18 @@ class AuthService {
     return email.trim().split('@').first;
   }
 
-  Future<bool> register(String email, String password) async {
+  Future<bool> register(String name, String email, String password) async {
+    final normalizedName = name.trim();
     final normalizedEmail = email.trim().toLowerCase();
-    final displayName = _displayNameForEmail(normalizedEmail);
     final credential = await _auth.createUserWithEmailAndPassword(
       email: normalizedEmail,
       password: password,
     );
     final user = credential.user!;
     try {
-      await user.updateDisplayName(displayName);
+      await user.updateDisplayName(normalizedName);
       await _firestore.collection('usuarios').doc(user.uid).set({
-        'username': displayName,
+        'username': normalizedName,
         'email': normalizedEmail,
         'photoUrl': '',
         'createdAt': FieldValue.serverTimestamp(),
@@ -49,14 +49,40 @@ class AuthService {
     final user = credential.user!;
     final profile = _firestore.collection('usuarios').doc(user.uid);
     final snapshot = await profile.get();
-    await profile.set({
-      'username': _displayNameForEmail(normalizedEmail),
+    final username = _usernameFor(user, snapshot.data());
+    final photoUrl =
+        snapshot.data()?['photoUrl'] as String? ?? user.photoURL ?? '';
+    final profileData = <String, dynamic>{
+      'username': username,
       'email': normalizedEmail,
-      'photoUrl':
-          snapshot.data()?['photoUrl'] as String? ?? user.photoURL ?? '',
+      'photoUrl': photoUrl,
       if (!snapshot.exists) 'createdAt': FieldValue.serverTimestamp(),
-    }, SetOptions(merge: true));
-    return (await profile.get()).data() ?? {};
+    };
+    await profile.set(profileData, SetOptions(merge: true));
+    return {'username': username, 'photoUrl': photoUrl};
+  }
+
+  Future<Map<String, dynamic>> loadProfile(User user) async {
+    final snapshot = await _firestore
+        .collection('usuarios')
+        .doc(user.uid)
+        .get();
+    final data = snapshot.data();
+    return {
+      'username': _usernameFor(user, data),
+      'photoUrl': data?['photoUrl'] as String? ?? user.photoURL ?? '',
+    };
+  }
+
+  String _usernameFor(User user, Map<String, dynamic>? profile) {
+    final profileName = profile?['username'];
+    if (profileName is String && profileName.trim().isNotEmpty) {
+      return profileName.trim();
+    }
+
+    final displayName = user.displayName?.trim();
+    if (displayName != null && displayName.isNotEmpty) return displayName;
+    return _displayNameForEmail(user.email ?? '');
   }
 
   Future<String> updateProfilePhoto({

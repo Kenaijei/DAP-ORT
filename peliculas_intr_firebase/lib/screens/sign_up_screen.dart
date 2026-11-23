@@ -11,6 +11,7 @@ class SignUpScreen extends ConsumerStatefulWidget {
 }
 
 class _SignUpScreenState extends ConsumerState<SignUpScreen> {
+  final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
@@ -18,10 +19,15 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
   bool _obscureConfirmPassword = true;
 
   Future<void> _signup() async {
+    final name = _nameController.text.trim();
     final email = _emailController.text.trim();
     final password = _passwordController.text;
     final confirmPassword = _confirmPasswordController.text;
 
+    if (name.isEmpty) {
+      _showError('Por favor ingresa tu nombre');
+      return;
+    }
     if (email.isEmpty) {
       _showError('Por favor ingresa tu correo electronico');
       return;
@@ -41,7 +47,9 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
       return;
     }
 
-    final success = await ref.read(authProvider.notifier).register(email, password);
+    final success = await ref
+        .read(authProvider.notifier)
+        .register(name, email, password);
     final authState = ref.read(authProvider);
 
     if (success) {
@@ -60,15 +68,13 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
 
   void _showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.red,
-      ),
+      SnackBar(content: Text(message), backgroundColor: Colors.red),
     );
   }
 
   @override
   void dispose() {
+    _nameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
@@ -95,7 +101,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                   color: Colors.black12,
                   blurRadius: 15,
                   offset: Offset(0, 5),
-                )
+                ),
               ],
             ),
             child: Column(
@@ -103,12 +109,22 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
               children: [
                 const Text(
                   'Registro',
-                  style: TextStyle(
-                    fontSize: 26,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 20),
+                TextField(
+                  controller: _nameController,
+                  enabled: !authState.isLoading,
+                  textCapitalization: TextCapitalization.words,
+                  decoration: InputDecoration(
+                    labelText: 'Nombre',
+                    prefixIcon: const Icon(Icons.person_outline),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 15),
                 TextField(
                   controller: _emailController,
                   enabled: !authState.isLoading,
@@ -132,7 +148,9 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                     prefixIcon: const Icon(Icons.lock),
                     suffixIcon: IconButton(
                       icon: Icon(
-                        _obscurePassword ? Icons.visibility : Icons.visibility_off,
+                        _obscurePassword
+                            ? Icons.visibility
+                            : Icons.visibility_off,
                       ),
                       onPressed: () {
                         setState(() {
@@ -155,7 +173,9 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                     prefixIcon: const Icon(Icons.lock),
                     suffixIcon: IconButton(
                       icon: Icon(
-                        _obscureConfirmPassword ? Icons.visibility : Icons.visibility_off,
+                        _obscureConfirmPassword
+                            ? Icons.visibility
+                            : Icons.visibility_off,
                       ),
                       onPressed: () {
                         setState(() {
@@ -187,7 +207,9 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                             width: 20,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Colors.white,
+                              ),
                             ),
                           )
                         : const Text('Registrarse'),

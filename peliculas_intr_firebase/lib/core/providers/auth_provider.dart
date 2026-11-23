@@ -1,7 +1,9 @@
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' as supabase;
 
 import 'package:tp4_dap/core/services/auth_service.dart';
 
@@ -14,6 +16,7 @@ class AuthState {
   final String? username;
   final String? photoUrl;
   final bool isLoading;
+  final bool isInitialized;
   final String? errorMessage;
 
   const AuthState({
@@ -21,6 +24,7 @@ class AuthState {
     this.username,
     this.photoUrl,
     this.isLoading = false,
+    this.isInitialized = false,
     this.errorMessage,
   });
 
@@ -29,6 +33,7 @@ class AuthState {
     String? username,
     String? photoUrl,
     bool? isLoading,
+    bool? isInitialized,
     String? errorMessage,
   }) {
     return AuthState(
@@ -36,6 +41,7 @@ class AuthState {
       username: username ?? this.username,
       photoUrl: photoUrl ?? this.photoUrl,
       isLoading: isLoading ?? this.isLoading,
+      isInitialized: isInitialized ?? this.isInitialized,
       errorMessage: errorMessage,
     );
   }
@@ -43,8 +49,55 @@ class AuthState {
 
 class AuthNotifier extends StateNotifier<AuthState> {
   final AuthService _authService;
+  late final StreamSubscription<User?> _authSubscription;
 
-  AuthNotifier(this._authService) : super(const AuthState());
+  AuthNotifier(this._authService) : super(const AuthState()) {
+    _authSubscription = FirebaseAuth.instance.authStateChanges().listen(
+      (user) => unawaited(_handleAuthChanged(user)),
+      onError: (Object error) {
+        state = state.copyWith(
+          isInitialized: true,
+          isLoading: false,
+          errorMessage: _messageFor(error),
+        );
+      },
+    );
+  }
+
+  Future<void> _handleAuthChanged(User? user) async {
+    if (user == null) {
+      state = const AuthState(isInitialized: true);
+      return;
+    }
+
+    state = AuthState(
+      uid: user.uid,
+      username: user.displayName,
+      photoUrl: user.photoURL ?? '',
+      isLoading: true,
+      isInitialized: true,
+    );
+
+    try {
+      final profile = await _authService.loadProfile(user);
+      if (FirebaseAuth.instance.currentUser?.uid != user.uid) return;
+      state = AuthState(
+        uid: user.uid,
+        username: profile['username'] as String?,
+        photoUrl: profile['photoUrl'] as String? ?? '',
+        isInitialized: true,
+      );
+    } catch (error) {
+      if (FirebaseAuth.instance.currentUser?.uid != user.uid) return;
+      state = AuthState(
+        uid: user.uid,
+        username: user.displayName,
+        photoUrl: user.photoURL ?? '',
+        isInitialized: true,
+        errorMessage: _messageFor(error),
+      );
+    }
+  }
 
   Future<bool> login(String email, String password) async {
     state = state.copyWith(isLoading: true, errorMessage: null);
@@ -55,22 +108,23 @@ class AuthNotifier extends StateNotifier<AuthState> {
         username:
             profile['username'] as String? ?? email.trim().split('@').first,
         photoUrl: profile['photoUrl'] as String? ?? '',
+        isInitialized: true,
       );
       return true;
     } catch (error) {
-      state = AuthState(errorMessage: _messageFor(error));
+      state = AuthState(isInitialized: true, errorMessage: _messageFor(error));
       return false;
     }
   }
 
-  Future<bool> register(String email, String password) async {
+  Future<bool> register(String name, String email, String password) async {
     state = state.copyWith(isLoading: true, errorMessage: null);
     try {
-      await _authService.register(email, password);
-      state = const AuthState();
+      await _authService.register(name, email, password);
+      state = const AuthState(isInitialized: true);
       return true;
     } catch (error) {
-      state = AuthState(errorMessage: _messageFor(error));
+      state = AuthState(isInitialized: true, errorMessage: _messageFor(error));
       return false;
     }
   }
@@ -119,7 +173,13 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   Future<void> logout() async {
     await _authService.logout();
-    state = const AuthState();
+    state = const AuthState(isInitialized: true);
+  }
+
+  @override
+  void dispose() {
+    unawaited(_authSubscription.cancel());
+    super.dispose();
   }
 
   String _messageFor(Object error) {
@@ -137,6 +197,25 @@ class AuthNotifier extends StateNotifier<AuthState> {
         _ => error.message ?? 'Ocurrio un error de autenticacion',
       };
     }
-    return 'No se pudo completar la operacion. Revisa tu conexion y las reglas de Firebase';
+    if (error is supabase.StorageException) {
+      final statusCode = error.statusCode;
+      final storageError = error.error;
+      final details = [
+        if (error.message.isNotEmpty) error.message,
+        if (storageError != null && storageError.isNotEmpty) storageError,
+      ].join(' — ');
+      return 'Error al subir la foto a Supabase Storage'
+          '${statusCode == null ? '' : ' ($statusCode)'}'
+          '${details.isEmpty ? '' : ': $details'}';
+    }
+    if (error is supabase.AuthException) {
+      return 'Error de autenticacion de Supabase'
+          '${error.code == null ? '' : ' (${error.code})'}: ${error.message}';
+    }
+    if (error is FirebaseException) {
+      return 'Error de Firebase (${error.code}): '
+          '${error.message ?? 'No se pudo completar la operacion'}';
+    }
+    return 'No se pudo completar la operacion: $error';
   }
 }

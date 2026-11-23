@@ -12,20 +12,19 @@ class MovieDetailsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final movies = ref.watch(moviesProvider);
+    final movies = ref.watch(moviesProvider).valueOrNull ?? const <Movie>[];
     final currentMovie = movies.firstWhere(
       (m) => m.id == movie.id,
       orElse: () => movie,
     );
-    final isEditing = currentMovie.id == movie.id;
 
     Widget buildInfoChip(IconData icon, String text) {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.14),
+          color: Colors.white.withValues(alpha: 0.14),
           borderRadius: BorderRadius.circular(999),
-          border: Border.all(color: Colors.white.withOpacity(0.16)),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.16)),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -68,7 +67,7 @@ class MovieDetailsScreen extends ConsumerWidget {
                   gradient: LinearGradient(
                     colors: [
                       currentMovie.accentColor,
-                      currentMovie.accentColor.withOpacity(0.7),
+                      currentMovie.accentColor.withValues(alpha: 0.7),
                     ],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
@@ -95,7 +94,7 @@ class MovieDetailsScreen extends ConsumerWidget {
                           fit: BoxFit.cover,
                           errorBuilder: (context, error, stackTrace) {
                             return Container(
-                              color: Colors.white.withOpacity(0.16),
+                              color: Colors.white.withValues(alpha: 0.16),
                               child: const Icon(
                                 Icons.local_movies_rounded,
                                 size: 46,
@@ -130,12 +129,18 @@ class MovieDetailsScreen extends ConsumerWidget {
                       spacing: 10,
                       runSpacing: 10,
                       children: [
-                        buildInfoChip(Icons.category_rounded, currentMovie.genre),
+                        buildInfoChip(
+                          Icons.category_rounded,
+                          currentMovie.genre,
+                        ),
                         buildInfoChip(
                           Icons.calendar_month_rounded,
                           '${currentMovie.year}',
                         ),
-                        buildInfoChip(Icons.schedule_rounded, currentMovie.duration),
+                        buildInfoChip(
+                          Icons.schedule_rounded,
+                          currentMovie.duration,
+                        ),
                         buildInfoChip(
                           Icons.star_rounded,
                           currentMovie.rating.toStringAsFixed(1),
@@ -168,7 +173,10 @@ class MovieDetailsScreen extends ConsumerWidget {
                     const SizedBox(height: 12),
                     _DetailRow(label: 'Genero', value: currentMovie.genre),
                     const SizedBox(height: 12),
-                    _DetailRow(label: 'Descripcion', value: currentMovie.description),
+                    _DetailRow(
+                      label: 'Descripcion',
+                      value: currentMovie.description,
+                    ),
                     const SizedBox(height: 12),
                     _DetailRow(label: 'Portada', value: currentMovie.posterUrl),
                     const SizedBox(height: 12),
@@ -191,14 +199,30 @@ class MovieDetailsScreen extends ConsumerWidget {
                       onPressed: () async {
                         final updatedMovie = await showDialog<Movie>(
                           context: context,
-                          builder: (context) => AddMovieDialog(movie: currentMovie),
+                          builder: (context) =>
+                              AddMovieDialog(movie: currentMovie),
                         );
 
-                        if (updatedMovie != null) {
-                          ref.read(moviesProvider.notifier).updateMovie(updatedMovie);
+                        if (updatedMovie == null || !context.mounted) return;
+                        try {
+                          await ref
+                              .read(moviesProvider.notifier)
+                              .updateMovie(updatedMovie);
+                          if (!context.mounted) return;
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
-                              content: Text('Película actualizada correctamente'),
+                              content: Text(
+                                'Pelicula actualizada correctamente',
+                              ),
+                            ),
+                          );
+                        } catch (error) {
+                          if (!context.mounted) return;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                'No se pudo actualizar la pelicula: $error',
+                              ),
                             ),
                           );
                         }
@@ -233,6 +257,66 @@ class MovieDetailsScreen extends ConsumerWidget {
                   ),
                 ],
               ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () async {
+                    final confirmed = await showDialog<bool>(
+                      context: context,
+                      builder: (dialogContext) => AlertDialog(
+                        title: const Text('Eliminar pelicula'),
+                        content: Text('Eliminar ${currentMovie.title}?'),
+                        actions: [
+                          TextButton(
+                            onPressed: () =>
+                                Navigator.of(dialogContext).pop(false),
+                            child: const Text('Cancelar'),
+                          ),
+                          TextButton(
+                            onPressed: () =>
+                                Navigator.of(dialogContext).pop(true),
+                            child: const Text('Eliminar'),
+                          ),
+                        ],
+                      ),
+                    );
+
+                    if (confirmed != true || !context.mounted) return;
+                    try {
+                      await ref
+                          .read(moviesProvider.notifier)
+                          .deleteMovie(currentMovie.id);
+                      if (!context.mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Pelicula eliminada correctamente'),
+                        ),
+                      );
+                      context.pop();
+                    } catch (error) {
+                      if (!context.mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            'No se pudo eliminar la pelicula: $error',
+                          ),
+                        ),
+                      );
+                    }
+                  },
+                  icon: const Icon(Icons.delete_outline),
+                  label: const Text('Eliminar pelicula'),
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 15),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    backgroundColor: Colors.red[700],
+                    foregroundColor: Colors.white,
+                  ),
+                ),
+              ),
             ],
           ),
         ),
@@ -263,10 +347,7 @@ class _DetailRow extends StatelessWidget {
         const SizedBox(height: 4),
         Text(
           value,
-          style: const TextStyle(
-            fontSize: 15,
-            fontWeight: FontWeight.w500,
-          ),
+          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
         ),
       ],
     );

@@ -1,19 +1,20 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:tp4_dap/entities/movie.dart';
 import 'package:tp4_dap/screens/add_movie_dialog.dart';
 import 'package:tp4_dap/core/providers/movies_provider.dart';
+import 'package:tp4_dap/core/providers/auth_provider.dart';
 
 class HomeScreen extends ConsumerWidget {
-  final String? username;
-
-  const HomeScreen({super.key, this.username});
+  const HomeScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final movies = ref.watch(moviesProvider);
-    final usernameText = username ?? 'Usuario';
+    final moviesState = ref.watch(moviesProvider);
+    final authState = ref.watch(authProvider);
+    final usernameText = authState.username ?? 'Usuario';
+    final photoUrl = authState.photoUrl ?? '';
 
     void openMovie(Movie movie) {
       context.push('/movie-detail', extra: movie);
@@ -26,10 +27,16 @@ class HomeScreen extends ConsumerWidget {
       );
 
       if (movie != null) {
-        await ref.read(moviesProvider.notifier).addMovie(movie);
-        if (context.mounted) {
+        try {
+          await ref.read(moviesProvider.notifier).addMovie(movie);
+          if (!context.mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Pelicula agregada correctamente!')),
+          );
+        } catch (error) {
+          if (!context.mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('No se pudo agregar la pelicula: $error')),
           );
         }
       }
@@ -48,7 +55,24 @@ class HomeScreen extends ConsumerWidget {
             message: 'Perfil',
             child: IconButton(
               onPressed: () => context.push('/profile'),
-              icon: const Icon(Icons.account_circle_outlined),
+              icon: photoUrl.isEmpty
+                  ? const CircleAvatar(
+                      radius: 18,
+                      child: Icon(Icons.person_outline, size: 22),
+                    )
+                  : ClipOval(
+                      child: Image.network(
+                        photoUrl,
+                        width: 36,
+                        height: 36,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) =>
+                            const CircleAvatar(
+                              radius: 18,
+                              child: Icon(Icons.person_outline, size: 22),
+                            ),
+                      ),
+                    ),
               iconSize: 27,
             ),
           ),
@@ -86,149 +110,218 @@ class HomeScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 18),
               Expanded(
-                child: ListView.separated(
-                  itemCount: movies.length,
-                  separatorBuilder: (_, _) => const SizedBox(height: 14),
-                  itemBuilder: (context, index) {
-                    final movie = movies[index];
-
-                    return InkWell(
-                      borderRadius: BorderRadius.circular(24),
-                      onTap: () => openMovie(movie),
-                      child: Container(
-                        padding: const EdgeInsets.all(18),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(24),
-                          border: Border.all(color: Colors.black12),
-                          boxShadow: const [
-                            BoxShadow(
-                              color: Color(0x14000000),
-                              blurRadius: 20,
-                              offset: Offset(0, 10),
-                            ),
-                          ],
+                child: moviesState.when(
+                  data: (movies) {
+                    if (movies.isEmpty) {
+                      return const Center(
+                        child: Text(
+                          'Todavia no hay peliculas. Agrega la primera.',
                         ),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(18),
-                              child: SizedBox(
-                                width: 74,
-                                height: 110,
-                                child: Image.network(
-                                  movie.posterUrl,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) {
-                                    return Container(
-                                      color: movie.accentColor,
-                                      child: const Icon(
-                                        Icons.local_movies,
-                                        color: Colors.white,
-                                        size: 36,
-                                      ),
-                                    );
-                                  },
+                      );
+                    }
+
+                    return ListView.separated(
+                      itemCount: movies.length,
+                      separatorBuilder: (_, _) => const SizedBox(height: 14),
+                      itemBuilder: (context, index) {
+                        final movie = movies[index];
+
+                        return InkWell(
+                          borderRadius: BorderRadius.circular(24),
+                          onTap: () => openMovie(movie),
+                          child: Container(
+                            padding: const EdgeInsets.all(18),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(24),
+                              border: Border.all(color: Colors.black12),
+                              boxShadow: const [
+                                BoxShadow(
+                                  color: Color(0x14000000),
+                                  blurRadius: 20,
+                                  offset: Offset(0, 10),
                                 ),
-                              ),
+                              ],
                             ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    movie.title,
-                                    style: const TextStyle(
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.w800,
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(18),
+                                  child: SizedBox(
+                                    width: 74,
+                                    height: 110,
+                                    child: Image.network(
+                                      movie.posterUrl,
+                                      fit: BoxFit.cover,
+                                      errorBuilder:
+                                          (context, error, stackTrace) {
+                                            return Container(
+                                              color: movie.accentColor,
+                                              child: const Icon(
+                                                Icons.local_movies,
+                                                color: Colors.white,
+                                                size: 36,
+                                              ),
+                                            );
+                                          },
                                     ),
                                   ),
-                                  const SizedBox(height: 6),
-                                  Text(
-                                    '${movie.genre} - ${movie.year} - ${movie.duration}',
-                                    style: TextStyle(
-                                      color: Colors.grey[700],
-                                      fontSize: 13,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 12),
-                                  Text(
-                                    movie.description,
-                                    maxLines: 3,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(
-                                      fontSize: 14,
-                                      height: 1.35,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 14),
-                                  Row(
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
-                                      Icon(
-                                        Icons.star_rounded,
-                                        color: Colors.amber[700],
-                                        size: 20,
-                                      ),
-                                      const SizedBox(width: 4),
                                       Text(
-                                        movie.rating.toStringAsFixed(1),
+                                        movie.title,
                                         style: const TextStyle(
-                                          fontWeight: FontWeight.w700,
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.w800,
                                         ),
                                       ),
-                                      const Spacer(),
-                                      IconButton(
-                                        onPressed: () async {
-                                          final confirmed = await showDialog<bool>(
-                                            context: context,
-                                            builder: (context) => AlertDialog(
-                                              title: const Text('Eliminar pelicula'),
-                                              content: Text('Eliminar ${movie.title}?'),
-                                              actions: [
-                                                TextButton(
-                                                  onPressed: () => Navigator.of(context).pop(false),
-                                                  child: const Text('Cancelar'),
-                                                ),
-                                                TextButton(
-                                                  onPressed: () => Navigator.of(context).pop(true),
-                                                  child: const Text('Eliminar'),
-                                                ),
-                                              ],
+                                      const SizedBox(height: 6),
+                                      Text(
+                                        '${movie.genre} - ${movie.year} - ${movie.duration}',
+                                        style: TextStyle(
+                                          color: Colors.grey[700],
+                                          fontSize: 13,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 12),
+                                      Text(
+                                        movie.description,
+                                        maxLines: 3,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(
+                                          fontSize: 14,
+                                          height: 1.35,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 14),
+                                      Row(
+                                        children: [
+                                          Icon(
+                                            Icons.star_rounded,
+                                            color: Colors.amber[700],
+                                            size: 20,
+                                          ),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            movie.rating.toStringAsFixed(1),
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.w700,
                                             ),
-                                          );
-                                          if (confirmed == true) {
-                                            await ref.read(moviesProvider.notifier).deleteMovie(movie.id);
-                                            if (context.mounted) {
-                                              ScaffoldMessenger.of(context).showSnackBar(
-                                                const SnackBar(content: Text('Pelicula eliminada')),
-                                              );
-                                            }
-                                          }
-                                        },
-                                        icon: const Icon(
-                                          Icons.delete_outline,
-                                          color: Colors.redAccent,
-                                          size: 22,
-                                        ),
-                                        tooltip: 'Eliminar pelicula',
-                                      ),
-                                      const SizedBox(width: 4),
-                                      const Icon(
-                                        Icons.chevron_right_rounded,
-                                        color: Colors.black54,
+                                          ),
+                                          const Spacer(),
+                                          IconButton(
+                                            onPressed: () async {
+                                              final confirmed =
+                                                  await showDialog<bool>(
+                                                    context: context,
+                                                    builder: (context) =>
+                                                        AlertDialog(
+                                                          title: const Text(
+                                                            'Eliminar pelicula',
+                                                          ),
+                                                          content: Text(
+                                                            'Eliminar ${movie.title}?',
+                                                          ),
+                                                          actions: [
+                                                            TextButton(
+                                                              onPressed: () =>
+                                                                  Navigator.of(
+                                                                    context,
+                                                                  ).pop(false),
+                                                              child: const Text(
+                                                                'Cancelar',
+                                                              ),
+                                                            ),
+                                                            TextButton(
+                                                              onPressed: () =>
+                                                                  Navigator.of(
+                                                                    context,
+                                                                  ).pop(true),
+                                                              child: const Text(
+                                                                'Eliminar',
+                                                              ),
+                                                            ),
+                                                          ],
+                                                        ),
+                                                  );
+                                              if (confirmed != true ||
+                                                  !context.mounted) {
+                                                return;
+                                              }
+                                              try {
+                                                await ref
+                                                    .read(
+                                                      moviesProvider.notifier,
+                                                    )
+                                                    .deleteMovie(movie.id);
+                                                if (!context.mounted) return;
+                                                ScaffoldMessenger.of(
+                                                  context,
+                                                ).showSnackBar(
+                                                  const SnackBar(
+                                                    content: Text(
+                                                      'Pelicula eliminada',
+                                                    ),
+                                                  ),
+                                                );
+                                              } catch (error) {
+                                                if (!context.mounted) return;
+                                                ScaffoldMessenger.of(
+                                                  context,
+                                                ).showSnackBar(
+                                                  SnackBar(
+                                                    content: Text(
+                                                      'No se pudo eliminar la pelicula: $error',
+                                                    ),
+                                                  ),
+                                                );
+                                              }
+                                            },
+                                            icon: const Icon(
+                                              Icons.delete_outline,
+                                              color: Colors.redAccent,
+                                              size: 22,
+                                            ),
+                                            tooltip: 'Eliminar pelicula',
+                                          ),
+                                          const SizedBox(width: 4),
+                                          const Icon(
+                                            Icons.chevron_right_rounded,
+                                            color: Colors.black54,
+                                          ),
+                                        ],
                                       ),
                                     ],
                                   ),
-                                ],
-                              ),
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
-                      ),
+                          ),
+                        );
+                      },
                     );
                   },
+                  loading: () =>
+                      const Center(child: CircularProgressIndicator()),
+                  error: (error, stackTrace) => Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Text('No se pudieron cargar las peliculas.'),
+                        TextButton(
+                          onPressed: () =>
+                              ref.read(moviesProvider.notifier).reload(),
+                          child: const Text('Reintentar'),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ),
             ],
@@ -238,4 +331,3 @@ class HomeScreen extends ConsumerWidget {
     );
   }
 }
-
